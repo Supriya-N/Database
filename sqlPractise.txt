@@ -1,0 +1,417 @@
+SQL Queries From Leetcode:
+
+1. Combine Two Tables
+
+Table: Person
+
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| PersonId    | int     |
+| FirstName   | varchar |
+| LastName    | varchar |
++-------------+---------+
+PersonId is the primary key column for this table.
+Table: Address
+
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| AddressId   | int     |
+| PersonId    | int     |
+| City        | varchar |
+| State       | varchar |
++-------------+---------+
+AddressId is the primary key column for this table.
+ 
+
+Write a SQL query for a report that provides the following information for each person in the Person table, regardless if there is an address for each of those people:
+
+FirstName, LastName, City, State
+
+Select P.FirstName, P.LastName, a.City, a.State
+from Person P Left JOIN Address a
+on P.PersonId = a.PersonID;
+
+================================================================================================================================================
+2. Second Highest Salary
+
+Write a SQL query to get the second highest salary from the Employee table.
+
++----+--------+
+| Id | Salary |
++----+--------+
+| 1  | 100    |
+| 2  | 200    |
+| 3  | 300    |
++----+--------+
+For example, given the above Employee table, the query should return 200 as the second highest salary. If there is no second highest salary, then the query should return null.
+
++---------------------+
+| SecondHighestSalary |
++---------------------+
+| 200                 |
++---------------------+
+
+Select IFNULL(
+    (Select distinct Salary
+    from Employee
+    order by Salary desc
+    Limit 1 offset 1), NULL) as SecondHighestSalary
+
+Select max(Salary) as SecondHighestSalary from Employee where Salary < (select max(salary) from Employee)
+
+================================================================================================================================================
+3. Rank Scores:
+
+Write a SQL query to rank scores. If there is a tie between two scores, both should have the same ranking. Note that after a tie, the next ranking number should be the next consecutive integer value. In other words, there should be no "holes" between ranks.
+
++----+-------+
+| Id | Score |
++----+-------+
+| 1  | 3.50  |
+| 2  | 3.65  |
+| 3  | 4.00  |
+| 4  | 3.85  |
+| 5  | 4.00  |
+| 6  | 3.65  |
++----+-------+
+For example, given the above Scores table, your query should generate the following report (order by highest score):
+
++-------+------+
+| Score | Rank |
++-------+------+
+| 4.00  | 1    |
+| 4.00  | 1    |
+| 3.85  | 2    |
+| 3.65  | 3    |
+| 3.65  | 3    |
+| 3.50  | 4    |
++-------+------+
+
+With cte as (
+select Score, DENSE_RANK() over (order by Score Desc) as Rank from Scores 
+) Select * from cte;
+
+================================================================================================================================================
+4. Consecutive Numbers
+
+Write a SQL query to find all numbers that appear at least three times consecutively.
+
++----+-----+
+| Id | Num |
++----+-----+
+| 1  |  1  |
+| 2  |  1  |
+| 3  |  1  |
+| 4  |  2  |
+| 5  |  1  |
+| 6  |  2  |
+| 7  |  2  |
++----+-----+
+For example, given the above Logs table, 1 is the only number that appears consecutively for at least three times.
+
++-----------------+
+| ConsecutiveNums |
++-----------------+
+| 1               |
++-----------------+
+
+SELECT Distinct num as ConsecutiveNums 
+FROM
+(
+SELECT num,LEAD(num) OVER(ORDER BY id) AS lead, LAG(num) OVER (ORDER BY id) AS lag
+FROM logs
+)t
+WHERE num=lead and num=lag;
+================================================================================================================================================
+5. Employees Earning More Than Their Managers
+
+The Employee table holds all employees including their managers. Every employee has an Id, and there is also a column for the manager Id.
+
++----+-------+--------+-----------+
+| Id | Name  | Salary | ManagerId |
++----+-------+--------+-----------+
+| 1  | Joe   | 70000  | 3         |
+| 2  | Henry | 80000  | 4         |
+| 3  | Sam   | 60000  | NULL      |
+| 4  | Max   | 90000  | NULL      |
++----+-------+--------+-----------+
+Given the Employee table, write a SQL query that finds out employees who earn more than their managers. For the above table, Joe is the only employee who earns more than his manager.
+
++----------+
+| Employee |
++----------+
+| Joe      |
++----------+
+
+select e.Name as Employee
+from Employee e join employee el
+on e.DepartmentId = el.Id
+where e.Salary > el.Salary
+ 
+================================================================================================================================================
+6. Managers with at Least 5 Direct Reports
+
+The Employee table holds all employees including their managers. Every employee has an Id, and there is also a column for the manager Id.
+
++------+----------+-----------+----------+
+|Id    |Name 	  |Department |ManagerId |
++------+----------+-----------+----------+
+|101   |John 	  |A 	      |null      |
+|102   |Dan 	  |A 	      |101       |
+|103   |James 	  |A 	      |101       |
+|104   |Amy 	  |A 	      |101       |
+|105   |Anne 	  |A 	      |101       |
+|106   |Ron 	  |B 	      |101       |
++------+----------+-----------+----------+
+Given the Employee table, write a SQL query that finds out managers with at least 5 direct report. For the above table, your SQL query should return:
+
++-------+
+| Name  |
++-------+
+| John  |
++-------+
+
+Select e.Id,e.Name from empl e where e.ID in (Select ManagerId from empl group by ManagerId having count(ManagerId) >= 5)
+
+SELECT Name
+FROM empl AS t1 JOIN
+    (SELECT ManagerId
+    FROM empl
+    GROUP BY ManagerId
+    HAVING COUNT(ManagerId) >= 5) AS t2
+    ON t1.Id = t2.ManagerId
+================================================================================================================================================
+7. Winning Candidate
+
+Table: Candidate
+
++-----+---------+
+| id  | Name    |
++-----+---------+
+| 1   | A       |
+| 2   | B       |
+| 3   | C       |
+| 4   | D       |
+| 5   | E       |
++-----+---------+  
+Table: Vote
+
++-----+--------------+
+| id  | CandidateId  |
++-----+--------------+
+| 1   |     2        |
+| 2   |     4        |
+| 3   |     3        |
+| 4   |     2        |
+| 5   |     5        |
++-----+--------------+
+id is the auto-increment primary key,
+CandidateId is the id appeared in Candidate table.
+Write a sql to find the name of the winning candidate, the above example will return the winner B.
+
++------+
+| Name |
++------+
+| B    |
++------+
+Notes:
+You may assume there is no tie, in other words there will be at most one winning candidate.
+
+select * from candidate where id = (select Top 1 candidateId as WinningCand
+from vote 
+group by candidateId 
+order by sum(Id) desc)
+
+select * from candidate where id = (select Top 1 candidateId as WinningCand
+from vote 
+group by candidateId 
+order by count(Id) desc)
+
+================================================================================================================================================
+8. Employee Bonus
+
+Select all employee’s name and bonus whose bonus is < 1000.
+
+Table:Employee
++-------+--------+-----------+--------+
+| empId |  name  | supervisor| salary |
++-------+--------+-----------+--------+
+|   1   | John   |  3        | 1000   |
+|   2   | Dan    |  3        | 2000   |
+|   3   | Brad   |  null     | 4000   |
+|   4   | Thomas |  3        | 4000   |
++-------+--------+-----------+--------+
+empId is the primary key column for this table.
+
+
+Table: Bonus
++-------+-------+
+| empId | bonus |
++-------+-------+
+| 2     | 500   |
+| 4     | 2000  |
++-------+-------+
+empId is the primary key column for this table.
+Example ouput:
++-------+-------+
+| name  | bonus |
++-------+-------+
+| John  | null  |
+| Dan   | 500   |
+| Brad  | null  |
++-------+-------+
+
+SELECT e.name, b.bonus FROM Employee AS e 
+LEFT JOIN Bonus AS b ON e.empId = b.empId
+WHERE b.bonus < 1000 OR b.bonus IS NULL;
+
+================================================================================================================================================
+9. Count Student Number in Departments
+
+A university uses 2 data tables, student and department, to store data about its students and the departments associated with each major.
+
+Write a query to print the respective department name and number of students majoring in each department for all departments in the department table (even ones with no current students).
+
+Sort your results by descending number of students; if two or more departments have the same number of students, then sort those departments alphabetically by department name.
+
+The student is described as follow:
+
+| Column Name  | Type      |
+|--------------|-----------|
+| student_id   | Integer   |
+| student_name | String    |
+| gender       | Character |
+| dept_id      | Integer   |
+where student_id is the student's ID number, student_name is the student's name, gender is their gender, and dept_id is the department ID associated with their declared major.
+
+And the department table is described as below:
+
+| Column Name | Type    |
+|-------------|---------|
+| dept_id     | Integer |
+| dept_name   | String  |
+where dept_id is the department's ID number and dept_name is the department name.
+
+Here is an example input:
+student table:
+
+| student_id | student_name | gender | dept_id |
+|------------|--------------|--------|---------|
+| 1          | Jack         | M      | 1       |
+| 2          | Jane         | F      | 1       |
+| 3          | Mark         | M      | 2       |
+department table:
+
+| dept_id | dept_name   |
+|---------|-------------|
+| 1       | Engineering |
+| 2       | Science     |
+| 3       | Law         |
+The Output should be:
+
+| dept_name   | student_number |
+|-------------|----------------|
+| Engineering | 2              |
+| Science     | 1              |
+| Law         | 0              |
+
+
+select d.d_name, count(s.s_id)
+from stud s Right Outer join dept d
+on s.dept_id = d.d_id
+group by d.d_name
+order by count(s.s_id) desc, d.d_name
+
+====================================================================================================================================================
+10. Find Customer Referee
+
+Given a table customer holding customers information and the referee.
+
++------+------+-----------+
+| id   | name | referee_id|
++------+------+-----------+
+|    1 | Will |      NULL |
+|    2 | Jane |      NULL |
+|    3 | Alex |         2 |
+|    4 | Bill |      NULL |
+|    5 | Zack |         1 |
+|    6 | Mark |         2 |
++------+------+-----------+
+Write a query to return the list of customers NOT referred by the person with id '2'.
+
+For the sample data above, the result is:
+
++------+
+| name |
++------+
+| Will |
+| Jane |
+| Bill |
+| Zack |
++------+
+
+SELECT name FROM customer WHERE referee_id != 2 OR referee_id IS NULL;
+
+PS: Always use IS NULL or IS NOT NULL conditions as MySQL uses three-valued logic -- TRUE, FALSE and UNKNOWN. Anything compared to NULL evaluates to the third value: UNKNOWN. That “anything” includes NULL itself! That’s why MySQL provides the IS NULL and IS NOT NULL operators to specifically check for NULL.
+
+If Query is like : SELECT name FROM customer WHERE referee_Id <> 2;
+	- It just returns one value "Zack"
+	
+====================================================================================================================================================
+11. Consecutive Available Seats
+
+Several friends at a cinema ticket office would like to reserve consecutive available seats.
+Can you help to query all the consecutive available seats order by the seat_id using the following cinema table?
+| seat_id | free |
+|---------|------|
+| 1       | 1    |
+| 2       | 0    |
+| 3       | 1    |
+| 4       | 1    |
+| 5       | 1    |
+Your query should return the following result for the sample case above.
+| seat_id |
+|---------|
+| 3       |
+| 4       |
+| 5       |
+Note:
+The seat_id is an auto increment int, and free is bool ('1' means free, and '0' means occupied.).
+Consecutive available seats are more than 2(inclusive) seats consecutively available.
+
+Using Self Join:
+
+select Distinct (c1.seat_id)
+from cinemas c1 join cinemas c2 
+on c1.seat_id = c2.seat_id + 1
+or c1.seat_id = c2.seat_id - 1
+where c1.free = 1 and c2.free = 1
+
+====================================================================================================================================================
+Nth Highest Salary:
+
+declare @n int;
+set @n = 3;
+select e1.* from employee e1 where (@n-1) = (Select count(distinct(salary) from employee e2 where e2.Salary > e1.salary)
+
+====================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
